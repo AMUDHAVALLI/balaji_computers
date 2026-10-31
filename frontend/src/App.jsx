@@ -219,33 +219,33 @@ export default function App() {
         </div>
       </div>
 
-      {/* 2. Perfectly Aligned Sticky Navigation Header */}
+      {/* 2. Perfectly Aligned Sticky Navigation Header (Desktop + Responsive Mobile/Tablet Menu) */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-sky-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="flex items-center justify-between gap-4 py-3">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6">
+          <div className="flex items-center justify-between gap-2 sm:gap-4 py-2.5 sm:py-3">
             {/* Brand Logo + Single-Line Neat Title Block */}
             <button
               type="button"
               onClick={() => navigateTo('home')}
-              className="flex items-center gap-3 text-left group shrink-0"
+              className="flex items-center gap-2.5 sm:gap-3 text-left group min-w-0"
             >
-              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden border-2 border-orange-500 shadow-md shrink-0 bg-white group-hover:scale-105 transition">
+              <div className="w-11 h-11 sm:w-13 sm:h-13 rounded-full overflow-hidden border-2 border-orange-500 shadow-md shrink-0 bg-white group-hover:scale-105 transition">
                 <img
                   src={BUSINESS_INFO.logoUrl}
                   alt="SBC System Doctor - Sri Balaji Computers Logo"
                   className="w-full h-full object-cover"
                 />
               </div>
-              <div className="flex flex-col justify-center">
+              <div className="flex flex-col justify-center min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-base sm:text-xl font-black tracking-tight text-rose-950 whitespace-nowrap">
+                  <span className="text-sm sm:text-lg xl:text-xl font-black tracking-tight text-rose-950 truncate">
                     {BUSINESS_INFO.name}
                   </span>
-                  <span className="hidden sm:inline-block text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-fuchsia-100 text-fuchsia-800 border border-fuchsia-300 whitespace-nowrap">
+                  <span className="hidden md:inline-block text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-fuchsia-100 text-fuchsia-800 border border-fuchsia-300 whitespace-nowrap shrink-0">
                     {BUSINESS_INFO.subHeader}
                   </span>
                 </div>
-                <div className="text-[10px] sm:text-xs font-extrabold text-indigo-900 tracking-wide whitespace-nowrap mt-0.5">
+                <div className="text-[10px] sm:text-xs font-extrabold text-indigo-900 tracking-wide truncate mt-0.5">
                   {BUSINESS_INFO.specialties} •{' '}
                   <span className="text-orange-600">SBC SYSTEM DOCTOR</span>
                 </div>
@@ -253,7 +253,7 @@ export default function App() {
             </button>
 
             {/* Desktop Primary Navigation (Zero Text Wrapping, Crisp Single-Line Pills) */}
-            <nav className="hidden lg:flex items-center gap-1">
+            <nav className="hidden lg:flex items-center gap-1 shrink-0">
               <button
                 type="button"
                 onClick={() => navigateTo('home')}
@@ -394,27 +394,37 @@ export default function App() {
               </button>
             </nav>
 
-            {/* Primary Header CTA (Single Line, Properly Aligned) */}
-            <div className="hidden sm:flex items-center gap-2 shrink-0">
+            {/* Right Action Controls (Desktop & Mobile) */}
+            <div className="flex items-center gap-2 shrink-0">
               <button
                 type="button"
                 onClick={() => openQuoteWithPrefill({})}
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 via-rose-600 to-fuchsia-600 hover:from-orange-400 hover:to-fuchsia-500 text-white text-xs font-extrabold py-2.5 px-4 rounded-xl shadow-md transition whitespace-nowrap"
+                className="inline-flex items-center gap-1.5 bg-gradient-to-r from-orange-500 via-rose-600 to-fuchsia-600 hover:from-orange-400 hover:to-fuchsia-500 text-white text-xs font-extrabold py-2 sm:py-2.5 px-3 sm:px-4 rounded-xl shadow-md transition whitespace-nowrap"
               >
                 <Sparkles className="w-3.5 h-3.5 shrink-0" />
-                <span>Free CCTV Quote</span>
+                <span className="hidden xs:inline sm:inline">Free Quote</span>
+              </button>
+
+              {/* Mobile & Tablet Hamburger Menu Button */}
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="lg:hidden inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-sky-50 hover:bg-sky-100 border border-sky-200 text-slate-800 text-xs font-bold transition"
+                aria-label="Toggle Menu"
+              >
+                {mobileMenuOpen ? (
+                  <>
+                    <X className="w-4 h-4 text-rose-600" />
+                    <span>Close</span>
+                  </>
+                ) : (
+                  <>
+                    <Menu className="w-4 h-4 text-sky-700" />
+                    <span>Menu</span>
+                  </>
+                )}
               </button>
             </div>
-
-            {/* Mobile Hamburger Button */}
-            <button
-              type="button"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2.5 rounded-xl bg-sky-50 border border-sky-200 text-slate-800"
-              aria-label="Toggle Menu"
-            >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
           </div>
 
           {/* Interactive Quick-Access Solution Strip (Desktop Sub-Bar) */}
@@ -460,35 +470,100 @@ export default function App() {
           </div>
         </div>
 
-        {/* Mobile Drawer */}
+        {/* Responsive Mobile & Tablet Menu Drawer */}
         {mobileMenuOpen && (
-          <div className="lg:hidden bg-white border-t border-sky-200 px-4 pt-3 pb-5 space-y-3 shadow-xl">
-            <div className="grid grid-cols-2 gap-2">
-              {allNavItems.map(item => (
-                <button
-                  key={item.key}
-                  type="button"
-                  onClick={() => navigateTo(item.key)}
-                  className={`text-left px-3 py-2.5 rounded-xl text-xs font-bold transition ${
-                    activePage === item.key
-                      ? 'bg-sky-600 text-white shadow-sm'
-                      : 'bg-sky-50 text-slate-700 hover:bg-sky-100'
-                  }`}
-                >
-                  {item.label}
-                </button>
-              ))}
+          <div className="lg:hidden bg-white border-t border-sky-200 px-4 pt-3 pb-5 space-y-4 shadow-2xl max-h-[82vh] overflow-y-auto">
+            <div>
+              <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-2">
+                Main Website Pages
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {[
+                  { key: 'home', label: 'Home' },
+                  { key: 'about', label: 'About Us' },
+                  { key: 'products', label: 'CCTV Cameras' },
+                  { key: 'consultation', label: 'Cost Calculator' },
+                  { key: 'faqPrivacy', label: 'FAQ & Privacy' },
+                  { key: 'contact', label: 'Contact Us' }
+                ].map(item => (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={() => navigateTo(item.key)}
+                    className={`text-left px-3.5 py-2.5 rounded-xl text-xs font-extrabold border transition ${
+                      activePage === item.key
+                        ? 'bg-sky-600 border-sky-600 text-white shadow-sm'
+                        : 'bg-sky-50/70 border-sky-200 text-slate-800 hover:bg-sky-100'
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
             </div>
-            <button
-              type="button"
-              onClick={() => {
-                setMobileMenuOpen(false);
-                openQuoteWithPrefill({});
-              }}
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-orange-500 to-fuchsia-600 text-white text-xs font-bold shadow-md"
-            >
-              Get Your Free CCTV Quotation
-            </button>
+
+            <div>
+              <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-2">
+                CCTV & Computer Services
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {serviceSubPages.map(sub => {
+                  const IconComp = sub.icon;
+                  const active = activePage === sub.key;
+                  return (
+                    <button
+                      key={sub.key}
+                      type="button"
+                      onClick={() => navigateTo(sub.key)}
+                      className={`flex items-center gap-3 p-2.5 rounded-xl border text-left transition ${
+                        active
+                          ? 'bg-sky-600 border-sky-600 text-white shadow-sm'
+                          : 'bg-sky-50/60 border-sky-200 text-slate-800 hover:bg-sky-100'
+                      }`}
+                    >
+                      <div
+                        className={`p-2 rounded-lg shrink-0 ${
+                          active ? 'bg-white/20 text-white' : 'bg-white text-sky-700 border border-sky-200'
+                        }`}
+                      >
+                        <IconComp className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs font-extrabold truncate">{sub.label}</div>
+                        <div
+                          className={`text-[10px] truncate ${
+                            active ? 'text-sky-100' : 'text-slate-500'
+                          }`}
+                        >
+                          {sub.desc}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-sky-100 grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <a
+                href={`tel:${BUSINESS_INFO.rawPhone}`}
+                className="inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-sky-600 text-white text-xs font-extrabold shadow-sm"
+              >
+                <PhoneCall className="w-4 h-4" />
+                <span>Call {BUSINESS_INFO.phoneFormatted}</span>
+              </a>
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  openQuoteWithPrefill({});
+                }}
+                className="inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-gradient-to-r from-orange-500 to-fuchsia-600 text-white text-xs font-extrabold shadow-sm"
+              >
+                <Sparkles className="w-4 h-4" />
+                <span>Get Free CCTV Quotation</span>
+              </button>
+            </div>
           </div>
         )}
       </header>
@@ -1893,24 +1968,54 @@ export default function App() {
         </div>
       )}
 
-      {/* Global Lead Generation Modal */}
+      {/* Compact, Height-Controlled Interactive Lead Generation Modal */}
       {quoteModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="relative max-w-xl w-full my-8">
-            <button
-              type="button"
-              onClick={() => setQuoteModalOpen(false)}
-              className="absolute -top-3 -right-3 z-10 p-2 rounded-full bg-white hover:bg-sky-50 border-2 border-sky-300 text-slate-800 shadow-lg"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            <LeadForm
-              prefill={quotePrefill}
-              onNavigatePrivacy={() => {
-                setQuoteModalOpen(false);
-                navigateTo('faqPrivacy');
-              }}
-            />
+        <div
+          className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4"
+          onClick={e => {
+            if (e.target === e.currentTarget) setQuoteModalOpen(false);
+          }}
+        >
+          <div className="relative max-w-xl w-full max-h-[90vh] flex flex-col bg-white border-2 border-sky-300 rounded-3xl shadow-2xl overflow-hidden">
+            {/* Pinned Compact Modal Header */}
+            <div className="flex items-center justify-between gap-3 px-5 py-3.5 bg-gradient-to-r from-sky-50 via-white to-sky-50 border-b border-sky-200 shrink-0">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <img
+                  src={BUSINESS_INFO.logoUrl}
+                  alt="SBC"
+                  className="w-9 h-9 rounded-full border border-orange-500 shrink-0"
+                />
+                <div className="min-w-0">
+                  <h3 className="text-sm sm:text-base font-extrabold text-slate-900 truncate">
+                    Get Your Free CCTV Quotation
+                  </h3>
+                  <p className="text-[11px] text-sky-700 font-semibold truncate">
+                    Sri Balaji Computers • Call/WhatsApp: {BUSINESS_INFO.phoneFormatted}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setQuoteModalOpen(false)}
+                className="p-2 rounded-full bg-sky-100 hover:bg-rose-100 text-slate-700 hover:text-rose-700 transition shrink-0"
+                aria-label="Close Modal"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Scrollable Compact Wizard Body */}
+            <div className="p-4 sm:p-5 overflow-y-auto">
+              <LeadForm
+                isModal={true}
+                prefill={quotePrefill}
+                onNavigatePrivacy={() => {
+                  setQuoteModalOpen(false);
+                  navigateTo('faqPrivacy');
+                }}
+              />
+            </div>
           </div>
         </div>
       )}

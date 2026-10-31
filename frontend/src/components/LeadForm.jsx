@@ -5,24 +5,35 @@ import {
   AlertCircle,
   Sparkles,
   Send,
-  RefreshCw
+  RefreshCw,
+  Home as HomeIcon,
+  Store,
+  Building2,
+  GraduationCap,
+  Factory,
+  Camera,
+  MapPin,
+  ArrowRight,
+  ArrowLeft,
+  PhoneCall,
+  ShieldCheck
 } from 'lucide-react';
 import { SERVICE_AREAS, BUSINESS_INFO } from '../data/siteContent';
 
 const PROPERTY_TYPES = [
-  'Home',
-  'Shop',
-  'Office',
-  'School / College',
-  'Factory / Warehouse'
+  { label: 'Home', icon: HomeIcon, desc: 'House / Villa / Flat' },
+  { label: 'Shop', icon: Store, desc: 'Retail / Showroom' },
+  { label: 'Office', icon: Building2, desc: 'IT / Commercial' },
+  { label: 'School / College', icon: GraduationCap, desc: 'Campus Security' },
+  { label: 'Factory / Warehouse', icon: Factory, desc: 'Industrial Godown' }
 ];
 
 const CAMERA_COUNTS = [
-  '2 cameras',
-  '4 cameras',
-  '8 cameras',
-  '16+ cameras',
-  'Need guidance'
+  { label: '2 cameras', approx: '₹10,500', tag: 'Starter' },
+  { label: '4 cameras', approx: '₹16,800', tag: 'Most Popular' },
+  { label: '8 cameras', approx: '₹34,500', tag: 'Commercial' },
+  { label: '16+ cameras', approx: '₹68,000+', tag: 'Enterprise' },
+  { label: 'Need guidance', approx: 'Free Survey', tag: 'Expert Help' }
 ];
 
 const SERVICE_TYPES = [
@@ -42,14 +53,24 @@ const BUDGET_OPTIONS = [
   '₹45,000+ (Commercial)'
 ];
 
+const QUICK_AREAS = [
+  'Mudaliarpet',
+  'Lawspet',
+  'Saram',
+  'Villianur',
+  'Reddiarpalayam',
+  'Puducherry Town'
+];
+
 export default function LeadForm({
   prefill = {},
   onSuccess,
   onNavigatePrivacy,
-  compact = false,
+  isModal = false,
   title = 'Get Your Free CCTV Quotation',
   subtitle = 'Share your requirements. We will contact you to discuss a suitable security solution in Puducherry.'
 }) {
+  const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     customerName: '',
     mobileNumber: '',
@@ -87,6 +108,23 @@ export default function LeadForm({
     if (error) setError('');
   };
 
+  // Live estimated price badge based on camera count & service
+  const getLiveEstimate = () => {
+    if (formData.estimatedAmount) {
+      return `~₹${Number(formData.estimatedAmount).toLocaleString('en-IN')}`;
+    }
+    if (formData.serviceRequired.toLowerCase().includes('repair')) {
+      return '₹500 – ₹2,500';
+    }
+    const found = CAMERA_COUNTS.find(c => c.label === formData.camerasRequired);
+    return found ? found.approx : 'Custom Quote';
+  };
+
+  const handleNextStep = () => {
+    setError('');
+    setStep(2);
+  };
+
   const handleSubmit = async e => {
     e.preventDefault();
     setError('');
@@ -113,19 +151,21 @@ export default function LeadForm({
     const buildWhatsappUrl = (code, leadObj) => {
       const waText = encodeURIComponent(
         `Hello Sri Balaji Computers (SBC - System Doctor)!\n` +
-        `*New CCTV Enquiry Details*\n` +
-        `------------------------\n` +
-        `*Enquiry ID:* ${code}\n` +
-        `*Customer Name:* ${leadObj.customerName}\n` +
-        `*Customer Mobile:* +91 ${String(leadObj.mobileNumber).slice(-10)}\n` +
-        `*Location:* ${leadObj.location}, Puducherry\n` +
-        `*Property Type:* ${leadObj.propertyType}\n` +
-        `*Cameras Required:* ${leadObj.camerasRequired}\n` +
-        `*Service Required:* ${leadObj.serviceRequired}\n` +
-        `*Budget:* ${leadObj.budget}\n` +
-        (leadObj.additionalRequirements ? `*Requirements:* ${leadObj.additionalRequirements}\n` : '') +
-        `------------------------\n` +
-        `Please share a CCTV quotation and site visit availability.`
+          `*New CCTV Enquiry Details*\n` +
+          `------------------------\n` +
+          `*Enquiry ID:* ${code}\n` +
+          `*Customer Name:* ${leadObj.customerName}\n` +
+          `*Customer Mobile:* +91 ${String(leadObj.mobileNumber).slice(-10)}\n` +
+          `*Location:* ${leadObj.location}, Puducherry\n` +
+          `*Property Type:* ${leadObj.propertyType}\n` +
+          `*Cameras Required:* ${leadObj.camerasRequired}\n` +
+          `*Service Required:* ${leadObj.serviceRequired}\n` +
+          `*Budget:* ${leadObj.budget}\n` +
+          (leadObj.additionalRequirements
+            ? `*Requirements:* ${leadObj.additionalRequirements}\n`
+            : '') +
+          `------------------------\n` +
+          `Please share a CCTV quotation and site visit availability.`
       );
       return `https://wa.me/917200113344?text=${waText}`;
     };
@@ -140,7 +180,6 @@ export default function LeadForm({
       if (!response.ok) {
         throw new Error(data.error || 'Could not submit enquiry.');
       }
-      // Ensure WhatsApp URL always points to 917200113344 with full enquiry details
       const guaranteedWaUrl = buildWhatsappUrl(data.lead?.leadCode || 'SBC-CCTV-2026', formData);
       const updatedData = {
         ...data,
@@ -152,7 +191,6 @@ export default function LeadForm({
       setSubmittedResult(updatedData);
       if (onSuccess) onSuccess(updatedData);
     } catch (err) {
-      // Fallback local lead generation if backend is unreachable
       const fallbackCode = `SBC-CCTV-2026-${Math.floor(1000 + Math.random() * 9000)}`;
       setSubmittedResult({
         message: 'Enquiry recorded! Our Puducherry team will contact you shortly.',
@@ -176,30 +214,30 @@ export default function LeadForm({
   if (submittedResult) {
     const { lead, notifications } = submittedResult;
     return (
-      <div className="bg-white border-2 border-emerald-400 rounded-2xl p-6 md:p-8 shadow-xl text-slate-900">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-12 h-12 rounded-full bg-emerald-100 border border-emerald-300 flex items-center justify-center text-emerald-600">
-            <CheckCircle2 className="w-7 h-7" />
+      <div className="bg-white border-2 border-emerald-400 rounded-2xl p-5 sm:p-6 shadow-xl text-slate-900">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-11 h-11 rounded-full bg-emerald-100 border border-emerald-300 flex items-center justify-center text-emerald-600 shrink-0">
+            <CheckCircle2 className="w-6 h-6" />
           </div>
           <div>
-            <span className="text-xs uppercase tracking-wider font-bold text-emerald-700">
+            <span className="text-[11px] uppercase tracking-wider font-bold text-emerald-700">
               Enquiry Submitted Successfully
             </span>
-            <h3 className="text-xl font-extrabold text-slate-900">
+            <h3 className="text-lg sm:text-xl font-extrabold text-slate-900">
               Thank You, {lead.customerName}!
             </h3>
           </div>
         </div>
 
-        <p className="text-slate-600 text-sm mb-5">
+        <p className="text-slate-600 text-xs sm:text-sm mb-4">
           Your CCTV security requirement for <strong className="text-slate-900">{lead.location}</strong> has been logged. Our Sri Balaji Computers team will call you on{' '}
-          <strong className="text-slate-900">+91 {lead.mobileNumber}</strong> to provide a customized quotation and schedule a site inspection.
+          <strong className="text-slate-900">+91 {lead.mobileNumber}</strong>.
         </p>
 
-        <div className="bg-sky-50 border border-sky-200 rounded-xl p-4 mb-5 space-y-2 text-sm">
-          <div className="flex justify-between items-center border-b border-sky-200 pb-2">
+        <div className="bg-sky-50 border border-sky-200 rounded-xl p-3.5 mb-4 space-y-1.5 text-xs sm:text-sm">
+          <div className="flex justify-between items-center border-b border-sky-200 pb-1.5">
             <span className="text-slate-600 font-medium">Unique Enquiry ID:</span>
-            <span className="font-mono font-bold text-sky-800 bg-white px-2.5 py-1 rounded border border-sky-300 shadow-sm">
+            <span className="font-mono font-bold text-sky-800 bg-white px-2 py-0.5 rounded border border-sky-300">
               {lead.leadCode}
             </span>
           </div>
@@ -213,39 +251,32 @@ export default function LeadForm({
             <span className="text-slate-600">Service Requested:</span>
             <span className="text-slate-900 font-medium">{lead.serviceRequired}</span>
           </div>
-          {lead.estimatedAmount && (
-            <div className="flex justify-between items-center">
-              <span className="text-slate-600">Tentative Estimate:</span>
-              <span className="text-emerald-700 font-bold">
-                ₹{Number(lead.estimatedAmount).toLocaleString('en-IN')} (Approx.)
-              </span>
-            </div>
-          )}
-          <div className="flex justify-between items-center text-xs pt-2 border-t border-sky-200 text-slate-500">
-            <span>Alert Sent: {notifications?.businessEmailNotified}</span>
-            <span className="text-emerald-700 font-semibold">
-              ✓ {notifications?.customerAcknowledgement}
-            </span>
+          <div className="flex justify-between items-center">
+            <span className="text-slate-600">Tentative Estimate:</span>
+            <span className="text-emerald-700 font-bold">{getLiveEstimate()}</span>
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex flex-col sm:flex-row gap-2.5">
           <a
             href={notifications?.whatsappUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-1 inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-5 rounded-xl transition shadow-md"
+            className="flex-1 inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-4 rounded-xl transition shadow-md text-xs sm:text-sm"
           >
-            <MessageSquare className="w-5 h-5" />
-            Send Enquiry Details to WhatsApp (7200113344)
+            <MessageSquare className="w-4 h-4 shrink-0" />
+            <span>Send Enquiry to WhatsApp (7200113344)</span>
           </a>
           <button
             type="button"
-            onClick={() => setSubmittedResult(null)}
-            className="inline-flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-3 px-4 rounded-xl transition border border-slate-300"
+            onClick={() => {
+              setSubmittedResult(null);
+              setStep(1);
+            }}
+            className="inline-flex items-center justify-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2.5 px-4 rounded-xl transition border border-slate-300 text-xs sm:text-sm"
           >
-            <RefreshCw className="w-4 h-4" />
-            Submit Another Enquiry
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>New Enquiry</span>
           </button>
         </div>
       </div>
@@ -253,227 +284,391 @@ export default function LeadForm({
   }
 
   return (
-    <div className="bg-white border-2 border-sky-200 rounded-2xl p-6 md:p-8 shadow-xl text-slate-900">
-      <div className="mb-6">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-100 border border-sky-300 text-sky-800 text-xs font-bold mb-2">
-          <Sparkles className="w-3.5 h-3.5 text-orange-500" />
-          Fast Response Across Puducherry • 7200113344
+    <div
+      className={`bg-white ${
+        isModal ? '' : 'border-2 border-sky-200 rounded-2xl p-5 sm:p-7 shadow-xl'
+      } text-slate-900`}
+    >
+      {/* Header + Interactive 2-Step Progress Indicator */}
+      <div className="mb-4">
+        {!isModal && (
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-100 border border-sky-300 text-sky-800 text-xs font-bold">
+              <Sparkles className="w-3.5 h-3.5 text-orange-500" />
+              <span>Fast Response • 7200113344</span>
+            </div>
+            <span className="text-xs font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg">
+              Est. Package: {getLiveEstimate()}
+            </span>
+          </div>
+        )}
+
+        {!isModal && (
+          <>
+            <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900">{title}</h3>
+            <p className="text-slate-600 text-xs sm:text-sm mt-0.5">{subtitle}</p>
+          </>
+        )}
+
+        {/* Interactive Step Switcher Tabs */}
+        <div className="grid grid-cols-2 gap-2 mt-3 bg-sky-50 p-1.5 rounded-xl border border-sky-200">
+          <button
+            type="button"
+            onClick={() => setStep(1)}
+            className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-extrabold transition ${
+              step === 1
+                ? 'bg-sky-600 text-white shadow-sm'
+                : 'text-slate-600 hover:text-sky-800'
+            }`}
+          >
+            <span
+              className={`w-5 h-5 rounded-full text-[11px] flex items-center justify-center font-black ${
+                step === 1 ? 'bg-white text-sky-700' : 'bg-sky-200 text-sky-800'
+              }`}
+            >
+              1
+            </span>
+            <span>1. Select CCTV Setup</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setStep(2)}
+            className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-extrabold transition ${
+              step === 2
+                ? 'bg-sky-600 text-white shadow-sm'
+                : 'text-slate-600 hover:text-sky-800'
+            }`}
+          >
+            <span
+              className={`w-5 h-5 rounded-full text-[11px] flex items-center justify-center font-black ${
+                step === 2 ? 'bg-white text-sky-700' : 'bg-sky-200 text-sky-800'
+              }`}
+            >
+              2
+            </span>
+            <span>2. Contact & Location</span>
+          </button>
         </div>
-        <h3 className="text-2xl font-extrabold text-slate-900">{title}</h3>
-        <p className="text-slate-600 text-sm mt-1">{subtitle}</p>
       </div>
 
       {error && (
-        <div className="mb-5 p-3.5 rounded-xl bg-red-50 border border-red-300 text-red-700 text-sm flex items-start gap-2.5">
-          <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+        <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-300 text-red-700 text-xs sm:text-sm flex items-start gap-2">
+          <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
           <span className="font-medium">{error}</span>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-              Customer Name *
-            </label>
-            <input
-              type="text"
-              name="customerName"
-              required
-              placeholder="e.g. Karthik Subramanian"
-              value={formData.customerName}
-              onChange={handleChange}
-              className="w-full bg-sky-50/50 border border-slate-300 focus:border-sky-600 focus:bg-white rounded-xl px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-              Mobile Number (10-Digit) *
-            </label>
-            <div className="relative">
-              <span className="absolute left-3.5 top-2.5 text-slate-500 text-sm font-semibold">
-                +91
-              </span>
-              <input
-                type="tel"
-                name="mobileNumber"
-                required
-                placeholder="72001 13344"
-                value={formData.mobileNumber}
-                onChange={handleChange}
-                className="w-full bg-sky-50/50 border border-slate-300 focus:border-sky-600 focus:bg-white rounded-xl pl-12 pr-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition"
-              />
+      <form onSubmit={handleSubmit}>
+        {/* ==================== STEP 1: INTERACTIVE CCTV REQUIREMENTS ==================== */}
+        {step === 1 && (
+          <div className="space-y-4">
+            {/* Property Type Interactive Cards */}
+            <div>
+              <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-700 mb-2">
+                Select Property Type
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                {PROPERTY_TYPES.map(item => {
+                  const IconComp = item.icon;
+                  const active = formData.propertyType === item.label;
+                  return (
+                    <button
+                      key={item.label}
+                      type="button"
+                      onClick={() =>
+                        setFormData(prev => ({ ...prev, propertyType: item.label }))
+                      }
+                      className={`p-2.5 rounded-xl border text-left transition flex flex-col justify-between ${
+                        active
+                          ? 'bg-sky-600 border-sky-600 text-white shadow-md'
+                          : 'bg-sky-50/60 border-sky-200 text-slate-800 hover:bg-sky-100/70'
+                      }`}
+                    >
+                      <IconComp
+                        className={`w-4 h-4 mb-1 ${
+                          active ? 'text-yellow-300' : 'text-sky-600'
+                        }`}
+                      />
+                      <div>
+                        <div className="text-xs font-extrabold leading-tight">{item.label}</div>
+                        <div
+                          className={`text-[10px] truncate mt-0.5 ${
+                            active ? 'text-sky-100' : 'text-slate-500'
+                          }`}
+                        >
+                          {item.desc}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-              Location in Puducherry *
-            </label>
-            <input
-              type="text"
-              name="location"
-              list="puducherry-locations"
-              required
-              placeholder="Mudaliarpet, Lawspet, Saram..."
-              value={formData.location}
-              onChange={handleChange}
-              className="w-full bg-sky-50/50 border border-slate-300 focus:border-sky-600 focus:bg-white rounded-xl px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition"
-            />
-            <datalist id="puducherry-locations">
-              {SERVICE_AREAS.map(area => (
-                <option key={area.name} value={area.name} />
-              ))}
-            </datalist>
-          </div>
+            {/* Interactive Camera Count Cards with Live Price Tag */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-extrabold uppercase tracking-wider text-slate-700">
+                  Number of Cameras Required
+                </label>
+                <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
+                  Est: {getLiveEstimate()}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                {CAMERA_COUNTS.map(cam => {
+                  const active = formData.camerasRequired === cam.label;
+                  return (
+                    <button
+                      key={cam.label}
+                      type="button"
+                      onClick={() =>
+                        setFormData(prev => ({ ...prev, camerasRequired: cam.label }))
+                      }
+                      className={`p-2.5 rounded-xl border text-center transition ${
+                        active
+                          ? 'bg-sky-600 border-sky-600 text-white shadow-md'
+                          : 'bg-sky-50/60 border-sky-200 text-slate-800 hover:bg-sky-100/70'
+                      }`}
+                    >
+                      <div
+                        className={`text-[10px] font-bold uppercase ${
+                          active ? 'text-yellow-300' : 'text-sky-700'
+                        }`}
+                      >
+                        {cam.tag}
+                      </div>
+                      <div className="text-xs font-extrabold mt-0.5">{cam.label}</div>
+                      <div
+                        className={`text-[10px] font-semibold mt-0.5 ${
+                          active ? 'text-sky-100' : 'text-emerald-700'
+                        }`}
+                      >
+                        {cam.approx}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-              Property Type
-            </label>
-            <select
-              name="propertyType"
-              value={formData.propertyType}
-              onChange={handleChange}
-              className="w-full bg-sky-50/50 border border-slate-300 focus:border-sky-600 focus:bg-white rounded-xl px-3.5 py-2.5 text-sm text-slate-900 outline-none transition"
-            >
-              {PROPERTY_TYPES.map(type => (
-                <option key={type} value={type}>
-                  {type}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* Interactive Pill Selection for Cameras Required */}
-        <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-            Number of Cameras Required
-          </label>
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-            {CAMERA_COUNTS.map(count => {
-              const active = formData.camerasRequired === count;
-              return (
-                <button
-                  key={count}
-                  type="button"
-                  onClick={() => setFormData(prev => ({ ...prev, camerasRequired: count }))}
-                  className={`py-2 px-2.5 rounded-xl text-xs font-bold border transition ${
-                    active
-                      ? 'bg-sky-600 border-sky-600 text-white shadow-sm'
-                      : 'bg-sky-50/60 border-slate-300 text-slate-700 hover:border-sky-400 hover:bg-sky-100/50'
-                  }`}
+            {/* Service & Budget Row */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-700 mb-1">
+                  Service Required
+                </label>
+                <select
+                  name="serviceRequired"
+                  value={formData.serviceRequired}
+                  onChange={handleChange}
+                  className="w-full bg-sky-50/60 border border-sky-200 focus:border-sky-600 focus:bg-white rounded-xl px-3 py-2 text-xs sm:text-sm font-medium text-slate-900 outline-none transition"
                 >
-                  {count}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+                  {SERVICE_TYPES.map(service => (
+                    <option key={service} value={service}>
+                      {service}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-              Service Required
-            </label>
-            <select
-              name="serviceRequired"
-              value={formData.serviceRequired}
-              onChange={handleChange}
-              className="w-full bg-sky-50/50 border border-slate-300 focus:border-sky-600 focus:bg-white rounded-xl px-3.5 py-2.5 text-sm text-slate-900 outline-none transition"
+              <div>
+                <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-700 mb-1">
+                  Estimated Budget
+                </label>
+                <select
+                  name="budget"
+                  value={formData.budget}
+                  onChange={handleChange}
+                  className="w-full bg-sky-50/60 border border-sky-200 focus:border-sky-600 focus:bg-white rounded-xl px-3 py-2 text-xs sm:text-sm font-medium text-slate-900 outline-none transition"
+                >
+                  {BUDGET_OPTIONS.map(b => (
+                    <option key={b} value={b}>
+                      {b}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleNextStep}
+              className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-sky-600 to-blue-700 hover:from-sky-500 hover:to-blue-600 text-white font-extrabold py-3 px-5 rounded-xl shadow-md transition text-sm"
             >
-              {SERVICE_TYPES.map(service => (
-                <option key={service} value={service}>
-                  {service}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-              Estimated Budget
-            </label>
-            <select
-              name="budget"
-              value={formData.budget}
-              onChange={handleChange}
-              className="w-full bg-sky-50/50 border border-slate-300 focus:border-sky-600 focus:bg-white rounded-xl px-3.5 py-2.5 text-sm text-slate-900 outline-none transition"
-            >
-              {BUDGET_OPTIONS.map(b => (
-                <option key={b} value={b}>
-                  {b}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {!compact && (
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-              Additional Requirements (Optional)
-            </label>
-            <textarea
-              name="additionalRequirements"
-              rows={2}
-              placeholder="e.g. Need mobile viewing setup, audio recording near shop counter, or outdoor gate night vision..."
-              value={formData.additionalRequirements}
-              onChange={handleChange}
-              className="w-full bg-sky-50/50 border border-slate-300 focus:border-sky-600 focus:bg-white rounded-xl px-3.5 py-2 text-sm text-slate-900 placeholder-slate-400 outline-none transition"
-            />
+              <span>Next: Enter Your Contact & Puducherry Area</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
           </div>
         )}
 
-        {/* Privacy & Optional Marketing Consents */}
-        <div className="space-y-2.5 pt-1">
-          <label className="flex items-start gap-2.5 text-xs text-slate-700 cursor-pointer">
-            <input
-              type="checkbox"
-              name="privacyConsent"
-              checked={formData.privacyConsent}
-              onChange={handleChange}
-              className="mt-0.5 rounded border-slate-400 text-sky-600 focus:ring-sky-500"
-            />
-            <span>
-              I consent to being contacted regarding this CCTV enquiry. I have read the{' '}
+        {/* ==================== STEP 2: CONTACT & LOCATION DETAILS ==================== */}
+        {step === 2 && (
+          <div className="space-y-3.5">
+            {/* Selected Summary Pill */}
+            <div className="bg-sky-50 border border-sky-200 rounded-xl px-3.5 py-2 flex items-center justify-between text-xs">
+              <span className="font-semibold text-slate-700">
+                Selected: <strong className="text-sky-900">{formData.propertyType}</strong> •{' '}
+                <strong className="text-sky-900">{formData.camerasRequired}</strong> (
+                {getLiveEstimate()})
+              </span>
               <button
                 type="button"
-                onClick={() => onNavigatePrivacy && onNavigatePrivacy()}
-                className="text-sky-700 font-semibold underline hover:text-sky-600"
+                onClick={() => setStep(1)}
+                className="text-sky-700 font-bold hover:underline"
               >
-                Privacy Policy
+                Change
               </button>
-              . *
-            </span>
-          </label>
+            </div>
 
-          <label className="flex items-start gap-2.5 text-xs text-slate-600 cursor-pointer">
-            <input
-              type="checkbox"
-              name="marketingConsent"
-              checked={formData.marketingConsent}
-              onChange={handleChange}
-              className="mt-0.5 rounded border-slate-400 text-sky-600 focus:ring-sky-500"
-            />
-            <span>
-              (Optional) Send me seasonal CCTV maintenance tips, security upgrades, and AMC offers on WhatsApp.
-            </span>
-          </label>
-        </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-700 mb-1">
+                  Customer Name *
+                </label>
+                <input
+                  type="text"
+                  name="customerName"
+                  required
+                  placeholder="e.g. Karthik Subramanian"
+                  value={formData.customerName}
+                  onChange={handleChange}
+                  className="w-full bg-sky-50/50 border border-slate-300 focus:border-sky-600 focus:bg-white rounded-xl px-3.5 py-2 text-sm text-slate-900 placeholder-slate-400 outline-none transition"
+                />
+              </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-700 hover:from-sky-500 hover:to-indigo-600 disabled:opacity-50 text-white font-extrabold py-3.5 px-6 rounded-xl shadow-lg shadow-sky-600/25 transition"
-        >
-          <Send className="w-4 h-4" />
-          {loading ? 'Generating Your Quotation ID...' : 'Get My Free CCTV Quotation'}
-        </button>
+              <div>
+                <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-700 mb-1">
+                  Mobile Number (10-Digit) *
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-2 text-slate-500 text-sm font-bold">
+                    +91
+                  </span>
+                  <input
+                    type="tel"
+                    name="mobileNumber"
+                    required
+                    placeholder="72001 13344"
+                    value={formData.mobileNumber}
+                    onChange={handleChange}
+                    className="w-full bg-sky-50/50 border border-slate-300 focus:border-sky-600 focus:bg-white rounded-xl pl-12 pr-3.5 py-2 text-sm text-slate-900 placeholder-slate-400 outline-none transition"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Quick-Click Puducherry Area Chips + Input */}
+            <div>
+              <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-700 mb-1">
+                Location in Puducherry *
+              </label>
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {QUICK_AREAS.map(area => (
+                  <button
+                    key={area}
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, location: area }))}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition ${
+                      formData.location === area
+                        ? 'bg-sky-600 border-sky-600 text-white'
+                        : 'bg-sky-50 border-sky-200 text-slate-700 hover:bg-sky-100'
+                    }`}
+                  >
+                    📍 {area}
+                  </button>
+                ))}
+              </div>
+              <input
+                type="text"
+                name="location"
+                list="puducherry-locations"
+                required
+                placeholder="Type your street / locality in Puducherry..."
+                value={formData.location}
+                onChange={handleChange}
+                className="w-full bg-sky-50/50 border border-slate-300 focus:border-sky-600 focus:bg-white rounded-xl px-3.5 py-2 text-sm text-slate-900 placeholder-slate-400 outline-none transition"
+              />
+              <datalist id="puducherry-locations">
+                {SERVICE_AREAS.map(area => (
+                  <option key={area.name} value={area.name} />
+                ))}
+              </datalist>
+            </div>
+
+            <div>
+              <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-700 mb-1">
+                Additional Notes (Optional)
+              </label>
+              <input
+                type="text"
+                name="additionalRequirements"
+                placeholder="e.g. Mobile viewing setup, shop billing mic, or outdoor night vision..."
+                value={formData.additionalRequirements}
+                onChange={handleChange}
+                className="w-full bg-sky-50/50 border border-slate-300 focus:border-sky-600 focus:bg-white rounded-xl px-3.5 py-2 text-xs sm:text-sm text-slate-900 placeholder-slate-400 outline-none transition"
+              />
+            </div>
+
+            {/* Compact Consent Checkboxes */}
+            <div className="space-y-1.5 pt-1">
+              <label className="flex items-start gap-2 text-xs text-slate-700 cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="privacyConsent"
+                  checked={formData.privacyConsent}
+                  onChange={handleChange}
+                  className="mt-0.5 rounded border-slate-400 text-sky-600 focus:ring-sky-500"
+                />
+                <span>
+                  I consent to being contacted regarding this enquiry and accept the{' '}
+                  <button
+                    type="button"
+                    onClick={() => onNavigatePrivacy && onNavigatePrivacy()}
+                    className="text-sky-700 font-bold underline hover:text-sky-600"
+                  >
+                    Privacy Policy
+                  </button>
+                  . *
+                </span>
+              </label>
+
+              <label className="flex items-start gap-2 text-[11px] text-slate-500 cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="marketingConsent"
+                  checked={formData.marketingConsent}
+                  onChange={handleChange}
+                  className="mt-0.5 rounded border-slate-400 text-sky-600 focus:ring-sky-500"
+                />
+                <span>(Optional) Send me seasonal CCTV maintenance & AMC tips on WhatsApp.</span>
+              </label>
+            </div>
+
+            <div className="flex items-center gap-2.5 pt-1">
+              <button
+                type="button"
+                onClick={() => setStep(1)}
+                className="inline-flex items-center justify-center gap-1 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 font-bold py-3 px-4 rounded-xl transition text-xs sm:text-sm"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span>Back</span>
+              </button>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex-1 inline-flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 via-rose-600 to-fuchsia-600 hover:from-orange-400 hover:to-fuchsia-500 disabled:opacity-50 text-white font-extrabold py-3 px-5 rounded-xl shadow-lg transition text-xs sm:text-sm"
+              >
+                <Send className="w-4 h-4 shrink-0" />
+                <span>
+                  {loading ? 'Submitting Enquiry...' : 'Get My Free CCTV Quotation'}
+                </span>
+              </button>
+            </div>
+          </div>
+        )}
       </form>
     </div>
   );
