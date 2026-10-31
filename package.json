@@ -1,5 +1,5 @@
 {
-  "name": "puducherry-cctv-fullstack",
+  "name": "sri-balaji-computers-cctv",
   "private": true,
   "version": "1.0.0",
   "description": "Complete CCTV Business Website + Lead Generation for Sri Balaji Computers (Puducherry)",
@@ -7,7 +7,13 @@
     "install:all": "npm --prefix backend install && npm --prefix frontend install",
     "start:backend": "npm --prefix backend start",
     "start:frontend": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend install && npm --prefix frontend run build",
     "build:frontend": "npm --prefix frontend run build"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "pg": "^8.11.5"
   }
 }
-

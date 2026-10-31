@@ -15,7 +15,8 @@ frontend/.env
 # Local runtime JSON database fallback
 backend/data/*.json
 
-# Production build outputs
+# Production build outputs & Vercel
+.vercel/
 dist/
 build/
 frontend/dist/
@@ -41,3 +42,5 @@ Thumbs.db
 *.sln
 *.sw?
 
+
+.vercel

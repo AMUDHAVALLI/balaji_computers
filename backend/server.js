@@ -15,18 +15,27 @@ try {
 }
 
 const app = express();
+const apiRouter = express.Router();
 const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
 
-// Persistent JSON fallback database path
-const DATA_DIR = path.join(__dirname, 'data');
-const DB_FILE = path.join(DATA_DIR, 'db.json');
-
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
+// Persistent JSON fallback database path (uses /tmp on read-only serverless platforms like Vercel)
+const os = require('os');
+let DATA_DIR = path.join(__dirname, 'data');
+try {
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
+  fs.accessSync(DATA_DIR, fs.constants.W_OK);
+} catch (err) {
+  DATA_DIR = path.join(os.tmpdir(), 'sbc-cctv-data');
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
 }
+const DB_FILE = path.join(DATA_DIR, 'db.json');
 
 // Initial Seed Data for Puducherry CCTV Website
 const initialProducts = [
@@ -421,7 +430,7 @@ function calculateLeadEstimate(camerasRequired, serviceRequired, propertyType) {
 }
 
 // GET /api/health
-app.get('/api/health', (req, res) => {
+apiRouter.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     storageMode: usePostgres ? 'PostgreSQL' : 'JSON Persistent Storage (PostgreSQL Ready)',
@@ -441,7 +450,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // GET /api/products
-app.get('/api/products', (req, res) => {
+apiRouter.get('/products', (req, res) => {
   const db = loadLocalDb();
   const { category } = req.query;
   let products = db.products || initialProducts;
@@ -452,7 +461,7 @@ app.get('/api/products', (req, res) => {
 });
 
 // GET /api/products/:slug
-app.get('/api/products/:slug', (req, res) => {
+apiRouter.get('/products/:slug', (req, res) => {
   const db = loadLocalDb();
   const product = (db.products || initialProducts).find(p => p.slug === req.params.slug);
   if (!product) {
@@ -462,7 +471,7 @@ app.get('/api/products/:slug', (req, res) => {
 });
 
 // POST /api/estimator - Interactive CCTV System & Storage Calculator
-app.post('/api/estimator', (req, res) => {
+apiRouter.post('/estimator', (req, res) => {
   const {
     propertyType = 'Home',
     indoorCameras = 2,
@@ -553,7 +562,7 @@ app.post('/api/estimator', (req, res) => {
 });
 
 // POST /api/leads - Create a new customer enquiry lead
-app.post('/api/leads', async (req, res) => {
+apiRouter.post('/leads', async (req, res) => {
   try {
     const {
       customerName,
@@ -690,9 +699,17 @@ app.post('/api/leads', async (req, res) => {
   }
 });
 
-initDatabase().then(() => {
-  app.listen(PORT, () => {
-    console.log(`🚀 Sri Balaji Computers (SBC) Backend Server running on http://localhost:${PORT}`);
+// Mount routes at both /api and / so both local dev and Vercel Services routePrefix work seamlessly
+app.use('/api', apiRouter);
+app.use('/', apiRouter);
+
+if (require.main === module) {
+  initDatabase().then(() => {
+    app.listen(PORT, () => {
+      console.log(`🚀 Sri Balaji Computers (SBC) Backend Server running on http://localhost:${PORT}`);
+    });
   });
-});
+}
+
+module.exports = app;
 
